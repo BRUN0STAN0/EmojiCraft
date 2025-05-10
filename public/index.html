@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>EmojiCraft</title>
+    <style>
+        body { margin: 0px; }
+        table { border-collapse: collapse; margin: 0px auto; border-bottom: 100px #77c697 solid; background: #8adeff;}
+        td {
+            width: 70px; height: 70px;
+            text-align: center;
+            border: 0px solid #000000;
+            font-size: 50px;
+            font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <audio id="collectSound" src="sounds/collect.mp3" preload="auto"></audio>
+    <audio id="music" src="sounds/music.mp3"  autoplay ></audio>
+    <h2 id="score" style="text-align:center; margin: 10px; position:absolute">Score: 0</h2>
+    <div style="text-align: center; position: absolute; top: 0px; left: 0px; right: 0px;">
+        <h2>Controls</h2>
+        <p>Use W, A, S, D to move</p>
+        <p>Collect items to increase your score!</p>
+    </div>  
+    <div id="grid"></div>
+ 
+    <script>
+       let playerX = -1;
+        let playerY = -1;
+        let previousScore = 0;
+        let musicPlaying = false;
+
+        async function loadWorld() {
+            const res = await fetch('/world');
+            const data = await res.json();
+            const grid = data.grid;
+            const score = data.score;
+
+            if (data.collected === true) {
+                playCollectSound();
+            }
+
+            previousScore = score;
+            document.getElementById("score").textContent = "Score: " + score;
+
+            let html = '<table>';
+            for (let y = 0; y < grid.length; y++) {
+                html += '<tr>';
+                for (let x = 0; x < grid[y].length; x++) {
+                    const cell = grid[y][x];
+
+                    if (cell.includes('🧍') || cell.includes('🚶') || cell.includes('🏃') || cell.includes('🧎') || cell.includes('🤸')) {
+                        playerX = x;
+                        playerY = y;
+                    }
+
+                    html += `<td>${cell}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+            document.getElementById('grid').innerHTML = html;
+        }
+
+
+
+
+        async function move(dir) {
+            await fetch('/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'dir=' + dir
+            });
+        }
+
+        function playCollectSound() {
+            const audio = document.getElementById("collectSound");
+            audio.pause();         // resetta se stava già suonando
+            audio.currentTime = 0;
+            audio.volume = 1.0;     // forza volume al massimo
+            audio.play().catch(err => console.warn("Audio blocked:", err));
+        }
+
+        // Rilevare la prima interazione con la pagina, click o tasto
+        // per avviare la musica
+        document.addEventListener('keydown', function() {
+            const audio = document.getElementById("music");
+            if (audio.paused) {
+                audio.currentTime = 0;
+                audio.volume = 0.05;
+                audio.play().catch(err => console.warn("Audio blocked:", err));
+            }
+        });
+
+        document.addEventListener('click', function() {
+            const audio = document.getElementById("music");
+            if (audio.paused) {
+                audio.currentTime = 0;
+                audio.volume = 0.05;
+                audio.play().catch(err => console.warn("Audio blocked:", err));
+            }
+        });
+
+
+
+        document.addEventListener('keydown', (e) => {
+            if (['w','a','s','d'].includes(e.key)) {
+                move(e.key.toUpperCase());
+            }
+        });
+
+        setInterval(loadWorld, 100);
+    </script>
+</body>
+</html>
