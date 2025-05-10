@@ -5,7 +5,8 @@
     <title>EmojiCraft</title>
     <style>
         body { margin: 0px; }
-        table { border-collapse: collapse; margin: 0px auto; border-bottom: 100px #77c697 solid; background: #8adeff;}
+        table { border-collapse: collapse; margin: 0px auto; border-bottom: 100px #77c697 solid;background: #fcfcf7;
+background: radial-gradient(circle,rgba(252, 252, 247, 1) 19%, rgba(255, 251, 227, 1) 34%, rgba(194, 251, 255, 1) 46%);}
         td {
             width: 70px; height: 70px;
             text-align: center;
@@ -13,17 +14,25 @@
             font-size: 50px;
             font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
         }
+
+        table tr:nth-child(9) td {
+            background-color: gray;
+        }
+        table tr:nth-child(10) td {
+            background-color: gray;
+        }
     </style>
 </head>
 <body>
     <audio id="collectSound" src="sounds/collect.mp3" preload="auto"></audio>
     <audio id="music" src="sounds/music.mp3"  autoplay ></audio>
-    <h2 id="score" style="text-align:center; margin: 10px; position:absolute">Score: 0</h2>
+    <h2 id="score" style="background: white;color: red; border: 3px dotted black; margin: 5px; border-radius: 10px; padding: 10px; text-align:center;  font-size:xx-large; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif; position:absolute">0</h2>
+    <h1 id="plus_score" style="display:none; position: absolute; border: 3px dotted black; margin-left: 80px; color:green; background: white; border-radius: 100px; padding: 3px;" >+1</h1>
     <div style="text-align: center; position: absolute; top: 0px; left: 0px; right: 0px;">
-        <h2>Controls</h2>
+        <h1>EmojiCraft</h1>
         <p>Use W, A, S, D to move</p>
         <p>Collect items to increase your score!</p>
-    </div>  
+    </div>
     <div id="grid"></div>
  
     <script>
@@ -40,10 +49,14 @@
 
             if (data.collected === true) {
                 playCollectSound();
+                document.getElementById("plus_score").style.display = "block";
+                setTimeout(() => {
+                    document.getElementById("plus_score").style.display = "none";
+                }, 1000);
             }
 
             previousScore = score;
-            document.getElementById("score").textContent = "Score: " + score;
+            document.getElementById("score").textContent =  score;
 
             let html = '<table>';
             for (let y = 0; y < grid.length; y++) {
@@ -79,7 +92,7 @@
             const audio = document.getElementById("collectSound");
             audio.pause();         // resetta se stava già suonando
             audio.currentTime = 0;
-            audio.volume = 1.0;     // forza volume al massimo
+            audio.volume = 0.2;     // forza volume al massimo
             audio.play().catch(err => console.warn("Audio blocked:", err));
         }
 
