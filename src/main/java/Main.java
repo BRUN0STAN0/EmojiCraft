@@ -18,6 +18,9 @@ public class Main {
     private static final int GRAVITY_DELAY_MS = 300;
     private static int score = 0;
     private static boolean lastCollected = false;
+    private static int recentScoreGained = 0;
+    private static long lastScoreTime = 0;
+
 
 
     private static int playerX = 2;
@@ -48,8 +51,9 @@ public class Main {
                 }
                 if (playerY < HEIGHT - 3) {
                     playerY++;
-                    checkItemCollision();
+                    checkItemCollisionAndReturnScore();
                 }
+                applyItemGravity();
             }
         }).start();
 
@@ -65,10 +69,8 @@ public class Main {
                 }
             }
 
-            // Disegna gli oggetti
             items.render(grid);
 
-            // Emoji del giocatore
             String emoji = switch (playerState) {
                 case "idle" -> "🧍🏻‍♂️";
                 case "walk" -> "🚶🏻‍♂️‍➡️";
@@ -81,32 +83,38 @@ public class Main {
                 default -> "🧍🏻‍♂️";
             };
             grid[playerY][playerX] = emoji;
-            boolean collected = lastCollected;
-            lastCollected = false; // reset dopo invio
-            return gson.toJson(new WorldResponse(grid, score, collected));
 
+            boolean collected = lastCollected;
+            lastCollected = false;
+
+            // ✅ Se il tempo passato è > 2 secondi, resetta
+            long now = System.currentTimeMillis();
+            if (now - lastScoreTime > 2000) {
+                recentScoreGained = 0;
+            }
+
+            return gson.toJson(new WorldResponse(grid, score, collected, recentScoreGained));
         });
 
+
         // Endpoint per il movimento del giocatore
-        post("/move", (req, res) -> {
+       post("/move", (req, res) -> {
             String dir = req.queryParams("dir");
+            int collectedScore = 0;
 
             if (dir != null) {
                 switch (dir.toUpperCase()) {
                     case "W" -> {
-                        new Thread(() -> {
-                            setTemporaryState("jump", 600);
-                            for (int i = 0; i < 5; i++) {
-                                if (playerY > 0) {
-                                    playerY--;
-                                    checkItemCollision(); // Raccogli oggetti durante il salto
-                                }
-                                try {
-                                    Thread.sleep(50);
-                                } catch (InterruptedException ignored) {
-                                }
+                        setTemporaryState("jump", 600);
+                        for (int i = 0; i < 5; i++) {
+                            if (playerY > 0) {
+                                playerY--;
+                                
                             }
-                        }).start();
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException ignored) {}
+                        }
                     }
                     case "S" -> {
                         playerY = Math.min(HEIGHT - 1, playerY + 1);
@@ -122,14 +130,31 @@ public class Main {
                         setTemporaryState(runNext ? "run" : "walk", 800);
                         runNext = !runNext;
                     }
+
                 }
+            collectedScore += checkItemCollisionAndReturnScore();
             }
 
-            // Controlla collisioni dopo il movimento
-            boolean collected = checkItemCollision();
-            return collected ? "collected" : "OK";
+            res.type("application/json");
+            return new Gson().toJson(new MoveResponse(
+                collectedScore > 0 ? "collected" : "OK",
+                collectedScore
+            ));
         });
+
+
     }
+
+    private static class MoveResponse {
+        String result;
+        int scoreGained;
+
+        public MoveResponse(String result, int scoreGained) {
+            this.result = result;
+            this.scoreGained = scoreGained;
+        }
+    }
+
 
     // Imposta uno stato temporaneo per il giocatore
     private static void setTemporaryState(String newState, int durationMs) {
@@ -144,15 +169,20 @@ public class Main {
     }
 
     // Controlla se il giocatore ha raccolto un oggetto
-    private static boolean checkItemCollision() {
+    private static int checkItemCollisionAndReturnScore() {
         var iterator = items.getComponents().iterator();
         while (iterator.hasNext()) {
             MapComponent item = iterator.next();
             if (item instanceof Item i) {
                 if (i.getX() == playerX && i.getY() == playerY) {
                     iterator.remove();
-                    score++;
-                    lastCollected = true; // <-- FLAG impostato
+                    int gained = i.getScore();
+                    score += gained;
+                    lastCollected = true;
+
+                    // ✅ Salva il punteggio recente e il timestamp
+                    recentScoreGained = gained;
+                    lastScoreTime = System.currentTimeMillis();
 
                     new Thread(() -> {
                         try {
@@ -161,24 +191,29 @@ public class Main {
                         } catch (InterruptedException ignored) {}
                     }).start();
 
-                    return true;
+                    return gained;
                 }
             }
         }
-        return false;
+        return 0;
     }
+
+
 
     private static class WorldResponse {
         String[][] grid;
         int score;
-        boolean collected; // nuovo campo
+        boolean collected;
+        int recentScoreGained;
 
-        public WorldResponse(String[][] grid, int score, boolean collected) {
+        public WorldResponse(String[][] grid, int score, boolean collected, int recentScoreGained) {
             this.grid = grid;
             this.score = score;
             this.collected = collected;
+            this.recentScoreGained = recentScoreGained;
         }
     }
+
 
 private static void createGround() {
     for (int y = HEIGHT - 2; y < HEIGHT; y++) {  // da HEIGHT-3 a HEIGHT-1
@@ -187,5 +222,28 @@ private static void createGround() {
         }
     }
 }
+
+private static void applyItemGravity() {
+    for (MapComponent item : items.getComponents()) {
+        if (item instanceof Item i) {
+            int x = i.getX();
+            int y = i.getY();
+
+            // Verifica che non stia già al suolo
+            if (y < HEIGHT - 1 && !isOccupied(x, y + 1)) {
+                i.setPosition(x, y+1); // Sposta l'oggetto in basso
+            }
+        }
+    }
+}
+private static boolean isOccupied(int x, int y) {
+    for (MapComponent item : items.getComponents()) {
+        if (item.getX() == x && item.getY() == y) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 }

@@ -46,14 +46,21 @@ background: radial-gradient(circle,rgba(252, 252, 247, 1) 19%, rgba(255, 251, 22
             const data = await res.json();
             const grid = data.grid;
             const score = data.score;
+            const recentScore = data.recentScoreGained;
 
-            if (data.collected === true) {
+            if (data.collected=== true) {
                 playCollectSound();
-                document.getElementById("plus_score").style.display = "block";
+
+                const plusScore = document.getElementById("plus_score");
+                plusScore.style.display = "block";
+                plusScore.textContent = "+" + recentScore;
+
                 setTimeout(() => {
-                    document.getElementById("plus_score").style.display = "none";
-                }, 1000);
+                    plusScore.style.display = "none";
+                }, 1500);
             }
+
+
 
             previousScore = score;
             document.getElementById("score").textContent =  score;
