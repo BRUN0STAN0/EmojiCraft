@@ -1,9 +1,11 @@
 package map;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ItemGroup {
+public class ItemGroup implements Serializable {
+    private static final long serialVersionUID = 1L; // Aggiungi un serialVersionUID
     private final List<MapComponent> components = new ArrayList<>();
 
     // Aggiungi un componente

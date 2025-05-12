@@ -22,9 +22,19 @@ public class Player {
         return emoji;
     }
 
+    public void setEmoji(String emoji) {
+        this.emoji = emoji;
+    }
+
     public void move(int deltaX, int deltaY, String newEmoji) {
         this.x += deltaX;
         this.y += deltaY;
         this.emoji = newEmoji; // Aggiorna l'emoji in base alla direzione
+    }
+
+    public void setPosition(int x, int y) {
+
+        this.x = x;
+        this.y = y;
     }
 }

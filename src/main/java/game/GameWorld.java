@@ -1,35 +1,66 @@
 package game;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import factory.ItemFactory;
+import factory.NegativeItemFactory;
 import map.ItemGroup;
 import map.MapComponent;
 import model.Item;
+import model.Wall;
 import response.MoveResponse;
 
 public class GameWorld {
     private static final int WIDTH = 24;
     private static final int HEIGHT = 10;
     private final ItemGroup items = new ItemGroup();
+    private List<Item> itemList;
     private int score = 0;
     private int recentScoreGained = 0;
     private boolean itemCollected = false;
+    private final Map<Item, Long> itemTimers = new ConcurrentHashMap<>(); // Mappa per tracciare il tempo di vita degli oggetti
+    private static final long ITEM_LIFETIME = 4000; // Tempo di vita degli oggetti in millisecondi
+    private int timeRemaining;
 
     public GameWorld() {
         createGround();
-        Random random = new Random();
-        int x = random.nextInt(WIDTH);
-        int y = random.nextInt(HEIGHT - 2); // Avoid ground area
-        items.add(ItemFactory.createRandomItem(x, y));
+        spawnNewItem();
     }
+
+    public synchronized int getTimeRemaining() {
+        return timeRemaining;
+    }
+
+    public synchronized void setTimeRemaining(int timeRemaining) {
+        this.timeRemaining = timeRemaining;
+    }
+
+    // Getter per gli oggetti
+    public List<Item> getItems() {
+        return itemList;
+    }
+
+    // Metodo per impostare gli oggetti (se necessario)
+    public void setItems(List<Item> items) {
+        this.itemList = items;
+    }
+
+
 
     public GameWorld(ItemGroup items) {
         this.items.getComponents().addAll(items.getComponents());
     }
 
-    public boolean movePlayer(Player player, String direction) {
+
+    public boolean movePlayer(Player player, String direction, GamePhysics gamePhysics) {
         itemCollected = false;
+
+        // Notifica che il movimento manuale è in corso
+        gamePhysics.startManualMovement();
 
         int newX = player.getX();
         int newY = player.getY();
@@ -37,18 +68,21 @@ public class GameWorld {
         // Calcola la nuova posizione in base alla direzione
         switch (direction) {
             case "W" -> newY -= 1; // Movimento verso l'alto
-            case "S" -> newY += 3; // Movimento verso il basso
+            case "S" -> newY += 1; // Movimento verso il basso
             case "A" -> newX -= 1; // Movimento verso sinistra
             case "D" -> newX += 1; // Movimento verso destra
         }
 
         // Controlla se la nuova posizione è valida
-        if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
+        if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT - 2) {
             player.move(newX - player.getX(), newY - player.getY(), directionToEmoji(direction));
             itemCollected = checkItemCollision(player);
         } else {
             System.out.println("Movimento non valido: il giocatore ha raggiunto il limite della griglia.");
         }
+
+        // Fine del movimento manuale, riattiva la fisica
+        gamePhysics.endManualMovement();
 
         System.out.println("Posizione giocatore: X=" + player.getX() + ", Y=" + player.getY());
         return itemCollected;
@@ -61,11 +95,11 @@ public class GameWorld {
             case "S" -> "🧎🏻‍♂️‍➡️";
             case "A" -> "🚶🏻‍♂️";
             case "D" -> "🚶🏻‍♂️‍➡️";
-            default -> "🧍";
+            default -> "🧍‍♂️";
         };
     }
 
-    public boolean checkItemCollision(Player player) {
+    public synchronized boolean checkItemCollision(Player player) {
         boolean collected = items.getComponents().removeIf(component -> {
             if (component instanceof Item item && item.getX() == player.getX() && item.getY() == player.getY()) {
                 recentScoreGained = item.getScore();
@@ -115,10 +149,12 @@ public class GameWorld {
         return itemCollected;
     }
 
-    private void createGround() {
+    public void createGround() {
         for (int y = HEIGHT - 2; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
-                items.add(new model.Wall(x, y));
+                Wall wall = new Wall(x, y);
+                items.add(wall);
+                System.out.println("Muro aggiunto in posizione X=" + x + ", Y=" + y);
             }
         }
     }
@@ -137,20 +173,47 @@ public class GameWorld {
         return HEIGHT;
     }
 
-    private void spawnNewItem() {
+    public synchronized void updateItems() {
+        long currentTime = System.currentTimeMillis();
+        Iterator<Map.Entry<Item, Long>> iterator = itemTimers.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            Map.Entry<Item, Long> entry = iterator.next();
+            Item item = entry.getKey();
+            long creationTime = entry.getValue();
+
+            // Controlla se il tempo di vita dell'oggetto è scaduto
+            if (currentTime - creationTime > ITEM_LIFETIME) {
+                items.remove(item); // Rimuovi l'oggetto dalla griglia
+                iterator.remove(); // Rimuovi l'oggetto dalla mappa dei timer
+                System.out.println("Oggetto scaduto rimosso: " + item.getSymbol());
+
+                // Genera un nuovo oggetto
+                spawnNewItem();
+            }
+        }
+    }
+
+    public synchronized void spawnNewItem() {
         Random random = new Random();
         int x, y;
 
         // Trova una posizione vuota nella griglia
         do {
-            x = random.nextInt(WIDTH); // Genera un valore tra 0 e WIDTH-1
-            y = random.nextInt(HEIGHT - 2); // Evita di generare oggetti sul terreno (ultime due righe)
+            x = random.nextInt(WIDTH);
+            y = random.nextInt(HEIGHT - 2); // Evita di generare oggetti sul terreno
         } while (!isCellEmpty(x, y));
 
-        // Crea un nuovo oggetto e aggiungilo alla lista
-        items.add(ItemFactory.createRandomItem(x, y));
-        System.out.println("Nuovo oggetto generato in posizione: X=" + x + ", Y=" + y);
+        // Genera casualmente un oggetto positivo o negativo
+        Item newItem = random.nextBoolean()
+                ? ItemFactory.createRandomItem(x, y) // Oggetto positivo
+                : NegativeItemFactory.createRandomNegativeItem(x, y); // Oggetto negativo
+
+        items.add(newItem);
+        itemTimers.put(newItem, System.currentTimeMillis()); // Registra il tempo di creazione dell'oggetto
+        System.out.println("Oggetto registrato: " + newItem.getSymbol() + " in posizione X=" + x + ", Y=" + y);
     }
+
     public void render(String[][] grid) {
         for (MapComponent component : items.getComponents()) {
             int x = component.getX();
@@ -159,9 +222,69 @@ public class GameWorld {
             // Verifica che gli indici siano validi
             if (x >= 0 && x < grid[0].length && y >= 0 && y < grid.length) {
                 grid[y][x] = component.getSymbol(); // Usa il simbolo del componente
+                System.out.println("Render Oggetto: " + component.getSymbol() + " in posizione X=" + x + ", Y=" + y);
             } else {
                 System.err.println("Errore: componente fuori dai limiti! X=" + x + ", Y=" + y);
             }
         }
     }
+
+    public void saveGame(Player player) {
+        GameStateManager.saveGameState(player.getX(), player.getY(), score, 
+            items.getComponents().stream()
+                .filter(component -> component instanceof Item)
+                .map(component -> (Item) component)
+                .toList(),
+        timeRemaining // Usa il campo timeRemaining
+    );
+}
+
+    public void loadGame(Player player) {
+        GameState gameState = GameStateManager.loadGameState();
+        if (gameState != null) {
+            player.move(gameState.getPlayerX() - player.getX(), gameState.getPlayerY() - player.getY(), "🧍");
+            score = gameState.getScore();
+            items.getComponents().clear();
+            items.getComponents().addAll(gameState.getItems());
+            System.out.println("Stato del gioco caricato con successo.");
+        }
+    }
+
+    public void registerShutdownHook(Player player) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            saveGame(player);
+        }));
+    }
+
+    public static void validateOrInitializePlayer(GameWorld gameWorld, Player player) {
+        // Controlla validità posizione del giocatore
+        if (!gameWorld.isValidPosition(player.getX(), player.getY())) {
+            System.out.println("Giocatore fuori dai confini. Reinserito nella posizione iniziale.");
+            player.setPosition(5, 3); // Posizione di spawn iniziale
+        }
+    }
+    public boolean isValidPosition(int x, int y) {
+        return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT - 2;
+    }
+
+    public void resetGame() {
+    // Rimuovi tutti gli oggetti esistenti
+    this.items.getComponents().clear(); 
+    this.itemTimers.clear(); // Pulisci la mappa dei timer
+    this.score = 0; // Reimposta il punteggi
+    this.timeRemaining = 60;
+    this.recentScoreGained = 0; // Resetta il punteggio recente
+    this.itemCollected = false; // Resetta il flag raccolta oggetto
+
+    // Crea nuovamente il terreno
+    createGround(); 
+
+    // Genera un nuovo oggetto
+    spawnNewItem(); 
+
+    // Log di debug
+    System.out.println("Gioco completamente ripristinato. Oggetti, timer e punteggio resettati.");
+}
+
+
 }

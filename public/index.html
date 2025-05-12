@@ -21,11 +21,84 @@
         <p>Collect items to increase your score!</p>
     </div>
     <div id="grid"></div>
+    <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);">
+        <button id="restart-button" style="padding: 15px 30px; font-size: large; border-radius: 5px; cursor: pointer;">
+            RESTART
+        </button>
+    </div>
+    <div id="game-over-overlay" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 1);
+    color: white;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Lucida Sans', sans-serif;
+    z-index: 1000;">
+        <h1 style="font-size: 50px;">Game Over!</h1>
+        <h2 id="final-score" style="font-size: 30px;">Your Score: 0</h2>
+        <button id="play-again-button" style="
+        padding: 15px 30px;
+        font-size: large;
+        border-radius: 10px;
+        cursor: pointer;
+        background-color: #77c697;
+        color: white;
+        border: none;">
+            Play Again
+        </button>
+    </div>
+
 
     <script>
         let playerX = -1;
         let playerY = -1;
         let previousScore = 0;
+
+
+        let timerDuration = 1 * 60; // 3 minuti in secondi
+        let timerInterval;
+
+        // Funzione per avviare il timer
+        function startTimer() {
+            const timerElement = document.createElement('h2');
+            timerElement.id = "timer";
+            timerElement.style = "background: white; color: black; border: 3px solid red; margin: 5px; border-radius: 10px; padding: 10px; text-align: center; font-size: large; font-family: 'Lucida Sans', sans-serif; position: absolute; right: 10px; top: 10px;";
+            document.body.appendChild(timerElement);
+
+            timerInterval = setInterval(() => {
+                if (timerDuration <= 0) {
+                    clearInterval(timerInterval);
+                    endGame();
+                } else {
+                    const minutes = Math.floor(timerDuration / 60);
+                    const seconds = timerDuration % 60;
+                    timerElement.textContent = `Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                    timerDuration--;
+                }
+            }, 1000); // Aggiorna ogni secondo
+        }
+
+        // Funzione per terminare il gioco
+        function endGame() {
+            document.getElementById("grid").style.display = "none"; // Nascondi la griglia
+            document.getElementById("score").style.display = "none"; // Nascondi il punteggio
+            document.getElementById("game-over-overlay").style.display = "flex"; // Mostra la schermata di fine partita
+
+            const finalScore = document.getElementById("score").textContent; // Ottieni il punteggio finale
+            document.getElementById("final-score").textContent = `Your Score: ${finalScore}`; // Mostra il punteggio
+        }
+
+
+
+        // Avvia il timer all'avvio del gioco
+        startTimer();
+
 
         function renderGrid(grid) {
             let html = '<table>';
@@ -99,6 +172,11 @@
             document.getElementById("score").textContent = score;
 
             renderGrid(grid);
+
+            if (!data.gameActive) {
+                endGame();
+            }
+
         }
 
         async function move(dir) {
@@ -119,6 +197,46 @@
         });
 
         setInterval(loadWorld, 100);
-    </script>
+        let restartButton = document.getElementById("restart-button");
+        let playAgainButton = document.getElementById("play-again-button");
+
+        // Listener per il pulsante "Restart"
+        restartButton.addEventListener("click", async () => {
+            try {
+                const response = await fetch('/restart', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    alert("Game restarted!");
+                    window.location.reload();
+                } else {
+                    console.error("Failed to restart the game");
+                    alert("Error restarting the game!");
+                }
+            } catch (error) {
+                console.error("Error in restart request:", error);
+            }
+        });
+
+        // Listener per il pulsante "Play Again"
+        playAgainButton.addEventListener("click", async () => {
+            document.getElementById("game-over-overlay").style.display = "none";
+            try {
+                const response = await fetch('/restart', {
+                    method: 'POST'
+                });
+                if (response.ok) {
+                    alert("Game restarted!");
+                    window.location.reload();
+                } else {
+                    console.error("Failed to restart the game");
+                    alert("Error restarting the game!");
+                }
+            } catch (error) {
+                console.error("Error in play again request:", error);
+            }
+        });
+</script>
 </body>
 </html>

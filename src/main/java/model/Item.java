@@ -1,8 +1,12 @@
 package model;
 
+import java.io.Serializable;
+
 import map.MapComponent;
 
-public class Item implements MapComponent {
+public class Item implements MapComponent, Serializable { // Aggiunto Serializable
+
+    private static final long serialVersionUID = 1L; // Aggiunto serialVersionUID
 
     private int x;
     private int y;
