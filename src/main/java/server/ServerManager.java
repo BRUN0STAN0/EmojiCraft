@@ -91,8 +91,17 @@ public class ServerManager {
         });
 
         post("/restart", (req, res) -> {
+            // Riavvia lo stato del gioco
             gameWorld.resetGame();
-            return "{\"message\": \"Game restarted\"}";
+            player.setPosition(2, 5); // Reimposta la posizione del giocatore
+            gameActive.set(true); // Riattiva il gioco
+
+            // Avvia nuovamente il timer
+            new Thread(() -> GameUtils.startGameTimer(gameWorld, player, gameActive, gameWorld.getTimeRemaining())).start();
+
+            logger.info("Gioco riavviato.");
+            res.type("application/json");
+            return "{\"message\": \"Game restarted\", \"gameActive\": true}";
         });
     }
 }

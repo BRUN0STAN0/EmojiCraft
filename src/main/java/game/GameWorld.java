@@ -25,6 +25,8 @@ public class GameWorld {
     private final Map<Item, Long> itemTimers = new ConcurrentHashMap<>(); // Mappa per tracciare il tempo di vita degli oggetti
     private static final long ITEM_LIFETIME = 4000; // Tempo di vita degli oggetti in millisecondi
     private int timeRemaining;
+    // Contatore per tracciare lo spawn degli oggetti
+    private int itemSpawnCounter = 0;
 
     public GameWorld() {
         createGround();
@@ -204,10 +206,15 @@ public class GameWorld {
             y = random.nextInt(HEIGHT - 2); // Evita di generare oggetti sul terreno
         } while (!isCellEmpty(x, y));
 
-        // Genera casualmente un oggetto positivo o negativo
-        Item newItem = random.nextBoolean()
-                ? ItemFactory.createRandomItem(x, y) // Oggetto positivo
-                : NegativeItemFactory.createRandomNegativeItem(x, y); // Oggetto negativo
+        // Logica di generazione dell'oggetto
+        Item newItem;
+        if (itemSpawnCounter == 2) { // Dopo 2 spawn positivi (al terzo), crea un oggetto negativo
+            newItem = NegativeItemFactory.createRandomNegativeItem(x, y);
+            itemSpawnCounter = 0; // Reset del contatore
+        } else {
+            newItem = ItemFactory.createRandomItem(x, y); // Genera un oggetto positivo
+            itemSpawnCounter++; // Incrementa il contatore
+        }
 
         items.add(newItem);
         itemTimers.put(newItem, System.currentTimeMillis()); // Registra il tempo di creazione dell'oggetto
