@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 public class ItemGroupIterator implements MapIterator {
-    private List<MapComponent> components;
+    private final List<MapComponent> components;
     private int position = 0;
 
     public ItemGroupIterator(List<MapComponent> components) {

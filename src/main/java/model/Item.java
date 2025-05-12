@@ -28,10 +28,12 @@ public class Item implements MapComponent {
         return emoji;
     }
 
+    @Override
     public int getX() {
         return x;
     }
 
+    @Override
     public int getY() {
         return y;
     }

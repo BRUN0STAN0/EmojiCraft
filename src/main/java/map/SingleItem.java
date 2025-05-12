@@ -1,8 +1,9 @@
 package map;
 
 public class SingleItem implements  MapComponent {
-    private int x, y;
-    private String emoji;
+    private final int x;
+    private final int y;
+    private final String emoji;
     private boolean visible;
 
     @Override
@@ -25,7 +26,9 @@ public class SingleItem implements  MapComponent {
         visible = v;
     }
 
+    @Override
     public int getX() { return x; }
+    @Override
     public int getY() { return y; }
     public String getEmoji() { return emoji; }
 
