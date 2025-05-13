@@ -1,141 +1,155 @@
 # EmojiCraft
 
-**EmojiCraft** è un'applicazione Java SE progettata per gestire elementi grafici in uno stile emozionale. Utilizza strutture ad albero, design patterns e funzionalità core di Java per garantire un'applicazione robusta, modulare e manutenibile. Questo progetto può essere utilizzato come una dimostrazione delle competenze di programmazione orientata agli oggetti e sicurezza applicativa.
+**EmojiCraft** è un'applicazione Java SE progettata per simulare un gioco interattivo utilizzando emoji, esplorando concetti avanzati di programmazione orientata agli oggetti (OOP), design patterns e tecnologie Java.
 
 ---
 
-## 📄 Funzionalità Principali
+## 🎯 Obiettivo del Progetto
 
-- Creazione e gestione dinamica di oggetti grafici (emojis).
-- Posizionamento e aggiornamento degli oggetti su una griglia.
-- Movimento di un giocatore sulla griglia con rilevamento delle collisioni.
-- Sistema di punteggio che premia/rimuove punti quando si interagisce con specifici oggetti.
-- Timer che segna la durata complessiva di una sessione.
-- Salvataggio e caricamento dello stato del gioco tramite file.
-- Logging degli eventi significativi per indagini e debug.
-
----
-
-## 🎓 Tecnologie e Pattern Utilizzati
-
-### Design Patterns (Punti: 16)
-
-1. **Factory Pattern** ✅ (3 punti)
-   - Implementato in `ItemFactory` e `NegativeItemFactory` per creare dinamicamente oggetti di gioco (positivi e negativi).
-
-2. **Composite Pattern** ✅ (4 punti)
-   - Utilizzato in `ItemGroup` per gestire insiemi gerarchici di componenti della griglia.
-
-3. **Iterator Pattern** ✅ (4 punti)
-   - Implementato in `MapIterator` per iterare facilmente sui componenti nella struttura della griglia.
-
-4. **Exception Shielding** ✅ (5 punti)
-   - Gestione robusta delle eccezioni utilizzando wrapper customizzati (`EmojiCraftException`) e logging sicuro con `LoggerUtil`.
+L'obiettivo del progetto è sviluppare un'applicazione **ben strutturata, sicura e manutenibile**, che dimostri:
+- Utilizzo della **programmazione orientata agli oggetti**.
+- Implementazione di **pattern di progettazione**.
+- Uso delle principali tecnologie Java.
+  
+Il progetto pone particolare attenzione alla **sicurezza del codice** e a una corretta gestione delle eccezioni.
 
 ---
 
-### Tecnologie obbligatorie (Punti: 11/14)
+## 📄 Requisiti Raggiunti
 
-1. **Collections Framework** ✅ (3 punti)
-   - Varianti di `List` utilizzate per contenere elementi e altri dati strutturati del gioco.
+### **Design Patterns obbligatori (16 punti)**
 
-2. **Generics** ✅ (3 punti)
-   - Utilizzati per rendere il codice delle collezioni e iteratori flessibile e riutilizzabile.
+1. **Factory**  
+   - **Implementazione**: `ItemFactory` e `NegativeItemFactory` gestiscono la creazione dinamica di oggetti di gioco come emoji positivi e negativi.  
+   - **Uso**: Factory Pattern permette di creare nuovi oggetti in posizioni casuali sulla griglia, semplificando l'estendibilità.  
 
-3. **Java I/O** ❌
-   - Sistemi di input/output (non completamente gestiti; presente solo la persistenza del gioco in `GameStateManager`).
+2. **Composite**  
+   - **Implementazione**: `ItemGroup` è utilizzato per rappresentare gerarchie di oggetti di gioco.
+   - **Uso**: Il Composite Pattern permette di combinare diversi oggetti sulla griglia, trattandoli come un singolo componente.
 
-4. **Logging** ✅ (2 punti)
-   - Implementazione completa di un sistema logging tramite `LoggerUtil`.
+3. **Iterator**  
+   - **Implementazione**: `MapIterator` è utilizzato per iterare attraverso gli elementi sulla griglia di gioco.
+   - **Uso**: Consente di attraversare i componenti della mappa secondo una logica predefinita.
 
-5. **JUnit Testing** ❌
-   - Implementazioni di test JUnit 5 non ancora incluse.
+4. **Exception Shielding**  
+   - **Implementazione**: `EmojiCraftException` garantisce una gestione robusta delle eccezioni.  
+   - **Uso**: Tutte le eccezioni sono catturate e schermate per evitare crash o stack trace visibili all'utente. Logging avanzato è eseguito con `LoggerUtil`.
 
 ---
 
-### Sicurezza
+### **Tecnologie obbligatorie (14 punti)**
 
-- **Eccezioni gestite correttamente** ✅ (No crash o stack trace visibili all'utente).
-- **Nessun dato sensibile hardcoded** ✅.
-- **Sanitizzazione dell’input** ❌ (Non ancora implementata poiché non richiesto direttamente dal gioco).
+1. **Collections Framework**  
+   - **Uso**: Ampio utilizzo di `List`, `Map` e `ConcurrentHashMap` per mantenere strutture dati flessibili e thread-safe.  
+   - **Esempio**: Gli oggetti di gioco vengono gestiti in una lista (`ItemGroup`).
+
+2. **Generics**  
+   - **Uso**: Generics sono utilizzati per scrivere codice flessibile, specialmente per le collezioni.  
+   - **Esempio**: `ItemGroup` utilizza Generics per gestire componenti di tipo `MapComponent`.
+
+3. **Java I/O**  
+   - **Implementazione**: La persistenza del gioco utilizza I/O binario e JSON attraverso `GameStateManager`.  
+   - **Esempio**: Lo stato del gioco è salvato in `game_state.dat` e `game_state.json`.
+
+4. **Logging**  
+   - **Implementazione**: Logging avanzato tramite `LoggerUtil`, che scrive eventi del gioco su `game_logs.log`.  
+   - **Esempio**: Il sistema registra eventi significativi come il riavvio del gioco e la fine del timer.
+
+5. **JUnit Testing**  
+   - **Implementazione**: Sono presenti test unitari parziali per le classi principali, come `GameStateManagerTest` e `PlayerTest`.  
+   - **Limitazione**: Non è ancora presente una suite completa di test JUnit.
+
+---
+
+### **Requisiti di Sicurezza**
+
+1. **Nessuna eccezione non gestita**  
+   Tutte le eccezioni sono catturate e gestite nel codice. Nessun crash o stack trace visibile all'utente. ✅  
+
+2. **Nessun dato sensibile hardcoded**  
+   Tutti i parametri configurabili (es. durata del gioco, spawn degli oggetti) sono definiti in `GameSettings.json`. ✅  
+
+3. **Sanificazione dell’input utente**  
+   La gestione degli input lato server non è completamente sanificata, lasciando potenziali margini di miglioramento con input inesperti o intenzionalmente errati.   
+
+4. **Propagazione controllata delle eccezioni**  
+   Propagazione centralizzata attraverso eccezioni personalizzate (`EmojiCraftException`). ✅  
 
 ---
 
 ## ⚙️ Setup ed Esecuzione
 
-Per eseguire l'applicazione:
+### Prerequisiti
+- **Java SE 17+**
+- **Maven 3.6+**
 
-1. **Download del progetto**
-   - Clona o scarica il progetto da [GitHub](https://github.com/user/emojicraft).
-   - Assicurarsi di avere configurato `Maven`.
+### Istruzioni
+1. **Clona il progetto**
+   ```bash
+   git clone https://github.com/PACIN00B/emojicraft
+   cd emojicraft
+   ```
 
-2. **Compilazione**
-   - Da terminale, esegui:
-     ```bash
-     mvn clean compile
-     ```
+2. **Compila ed esegui**
+   ```bash
+   mvn clean compile
+   mvn exec:java -Dexec.mainClass=Main
+   ```
 
-3. **Esecuzione**
-   - Da terminale, esegui:
-     ```bash
-     mvn exec:java -Dexec.mainClass=Main
-     ```
+3. **Avvia il front-end**
+   - Apri il browser e vai su `http://localhost:4567`.
 
-Per eseguire il front-end e avviare l'interfaccia utente, avvia il server con Spark integrato.
+---
+
+## 🎮 Comandi del Gioco
+
+- **Movimento del giocatore:** `W`, `A`, `S`, `D`.
+- **Riavvia il gioco:** Tramite pulsante *Restart*.
+- **HUD:** Visualizza punteggio e timer.
 
 ---
 
 ## 📊 Diagrammi UML
 
-Diagrammi generati per rappresentare:
+### Diagramma delle Classi
+![UML DIAGRAM](UML.png "UML")
 
-- **Classi principali:** Overview delle entità principali come `Player`, `GameWorld`, `Item`.
-- **Architettura ad albero:** Diagramma del pattern Composite.
-- **Flusso del gioco:** Diagramma che rappresenta come avviene l'interazione tra le classi.
-
-⚠️ Diagrammi non inclusi in questa versione; utilizza tool come [PlantUML](https://plantuml.com) o [StarUML](https://staruml.io).
-
----
-
-## ⚠️ Limitazioni Conosciute
-
-1. **Persistenza incompleta**:
-   - La persistenza è realizzata solo per lo stato del gioco. Manca una funzionalità più ricca con JSON o XML.
-
-2. **Assenza di Test (JUnit)**:
-   - La base di codice manca di una suite dedicata per test unitari.
-
-3. **Controllo Input Utente**:
-   - Sanitizzazione dell'input (`ServerManager`) da implementare per prevenire input imprevisti.
-
-4. **Java I/O**:
-   - Come menzionato nei requisiti, la funzionalità Java I/O resta limitata.
+### Diagramma dell'Architettura
+- Il server Spark comunica con il front-end tramite REST API per sincronizzare griglia, punteggio e timer. 
+- La logica di gioco è gestita nel back-end (Java), mentre l'interfaccia grafica è generata in HTML/CSS/JavaScript.
 
 ---
 
-## ✨ Miglioramenti Futuri
+## 🐞 Limitazioni Note
 
-1. **Test Coverage**:
-   - Implementare test con JUnit 5.
+1. **Sanificazione degli input**  
+   Attualmente non è implementata una gestione approfondita degli input lato server.
 
-2. **Miglioramenti al Logging**:
-   - Inserire messaggi più granulari dagli eventi di gioco.
+2. **JUnit Testing incompleto**  
+   La suite di test non copre tutte le funzionalità.
 
-3. **UI Avanzata**:
-   - Migrazione verso Swing o JavaFX per un’interfaccia user-friendly.
+3. **UI Limitata**  
+   Interfaccia utente semplice basata su HTML/CSS; migrazione a Swing o JavaFX potrebbe migliorare l'esperienza, non è stato possibile a causa delle emoji non supportate correttamente da JavaFX.
 
-4. **Sanitizzazione Input**:
-   - Implementare metodi di validazione.
-
-5. **Persistenza Avanzata**:
-   - Incorporare gestione di file JSON o XML per salvataggi più estensivi.
+4. **Persistenza migliorabile**  
+   Salvataggio dello stato basato su file JSON e binario, senza supporto per database.
 
 ---
 
-### 📞 Supporto
+## ✨ Possibili Miglioramenti
 
-Per domande o segnalazioni su EmojiCraft, contatta _bruno@emojicraft.com_.
+1. **Ampliare la suite di test JUnit** per raggiungere una maggiore copertura.
+2. **Rafforzare la sanificazione degli input** per una maggiore sicurezza lato server.
+3. **Migliorare l’UI** usando framework avanzati come JavaFX.
+4. **Aggiungere una gestione degli utenti** per consentire sessioni di gioco personalizzate.
 
 ---
 
-© Progetto sviluppato per un’esercitazione Object-Oriented Programming - **50/50 Version**.
+## 📬 Contatti
+
+Per segnalazioni o supporto:
+- **Email:** contact@brunostano.com
+
+---
+
+© 2025, Bruno Stano  - Tutti i diritti riservati.
