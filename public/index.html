@@ -1,242 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EmojiCraft</title>
-    <style>
-        body { margin: 0px; }
-        table { border-collapse: collapse; margin: 0px auto; border-bottom: 100px #77c697 solid; background: radial-gradient(circle, rgba(252, 252, 247, 1) 19%, rgba(255, 251, 227, 1) 34%, rgba(194, 251, 255, 1) 46%); }
-        td { width: 70px; height: 70px; text-align: center; border: 0px solid #000000; font-size: 50px; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
-        table tr:nth-child(9) td, table tr:nth-child(10) td { background-color: gray; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Audio Elements -->
     <audio id="collectSound" src="sounds/collect.mp3" preload="auto"></audio>
     <audio id="music" src="sounds/music.mp3" autoplay></audio>
-    <h2 id="score" style="background: white; color: red; border: 3px dotted black; margin: 5px; border-radius: 10px; padding: 10px; text-align: center; font-size: xx-large; font-family: 'Lucida Sans', sans-serif; position: absolute;">0</h2>
-    <h1 id="plus_score" style="display: none; position: absolute; border: 3px dotted black; margin-left: 80px; color: green; background: white; border-radius: 100px; padding: 3px;">+1</h1>
-    <div style="text-align: center; position: absolute; top: 0px; left: 0px; right: 0px;">
+
+    <!-- Header -->
+    <header>
         <h1>EmojiCraft</h1>
-        <p>Use W, A, S, D to move</p>
-        <p>Collect items to increase your score!</p>
-    </div>
-    <div id="grid"></div>
-    <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);">
-        <button id="restart-button" style="padding: 15px 30px; font-size: large; border-radius: 5px; cursor: pointer;">
-            RESTART
-        </button>
-    </div>
-    <div id="game-over-overlay" style="
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 1);
-    color: white;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Lucida Sans', sans-serif;
-    z-index: 1000;">
-        <h1 style="font-size: 50px;">Game Over!</h1>
-        <h2 id="final-score" style="font-size: 30px;">Your Score: 0</h2>
-        <button id="play-again-button" style="
-        padding: 15px 30px;
-        font-size: large;
-        border-radius: 10px;
-        cursor: pointer;
-        background-color: #77c697;
-        color: white;
-        border: none;">
-            Play Again
-        </button>
+        <p>Use W, A, S, D to move and collect items!</p>
+    </header>
+    
+    <!-- Score Section -->
+    <div id="hud">
+        <h2 id="score">0</h2>
+        <h2 id="timer"></h2>
     </div>
 
+    <!-- Grid Section -->
+    <div id="grid-container">
+        <div id="grid"></div>
+    </div>
 
-    <script>
-        let playerX = -1;
-        let playerY = -1;
-        let previousScore = 0;
+    <!-- Buttons -->
+    <div id="controls">
+        <button id="restart-button">Restart</button>
+    </div>
 
+    <!-- Game Over Overlay -->
+    <div id="game-over-overlay" class="hidden">
+        <h1>Game Over!</h1>
+        <h2 id="final-score">Your Score: 0</h2>
+        <button id="play-again-button">Play Again</button>
+    </div>
 
-        let timerDuration = 1 * 60; // 3 minuti in secondi
-        let timerInterval;
-
-        // Funzione per avviare il timer
-        function startTimer() {
-            const timerElement = document.createElement('h2');
-            timerElement.id = "timer";
-            timerElement.style = "background: white; color: black; border: 3px solid red; margin: 5px; border-radius: 10px; padding: 10px; text-align: center; font-size: large; font-family: 'Lucida Sans', sans-serif; position: absolute; right: 10px; top: 10px;";
-            document.body.appendChild(timerElement);
-
-            timerInterval = setInterval(() => {
-                if (timerDuration <= 0) {
-                    clearInterval(timerInterval);
-                    endGame();
-                } else {
-                    const minutes = Math.floor(timerDuration / 60);
-                    const seconds = timerDuration % 60;
-                    timerElement.textContent = `Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-                    timerDuration--;
-                }
-            }, 1000); // Aggiorna ogni secondo
-        }
-
-        // Funzione per terminare il gioco
-        function endGame() {
-            document.getElementById("grid").style.display = "none"; // Nascondi la griglia
-            document.getElementById("score").style.display = "none"; // Nascondi il punteggio
-            document.getElementById("game-over-overlay").style.display = "flex"; // Mostra la schermata di fine partita
-
-            const finalScore = document.getElementById("score").textContent; // Ottieni il punteggio finale
-            document.getElementById("final-score").textContent = `Your Score: ${finalScore}`; // Mostra il punteggio
-        }
-
-
-
-        // Avvia il timer all'avvio del gioco
-        startTimer();
-
-
-        function renderGrid(grid) {
-            let html = '<table>';
-            for (let y = 0; y < grid.length; y++) {
-                html += '<tr>';
-                for (let x = 0; x < grid[y].length; x++) {
-                    const cell = grid[y][x];
-                    if (cell.includes('🧍') || cell.includes('🚶') || cell.includes('🏃') || cell.includes('🧎') || cell.includes('🤸')) {
-                        playerX = x;
-                        playerY = y;
-                    }
-                    html += `<td>${cell}</td>`;
-                }
-                html += '</tr>';
-            }
-            html += '</table>';
-            document.getElementById('grid').innerHTML = html;
-        }
-
-        function playSound(audioId, volume = 0.2) {
-            const audio = document.getElementById(audioId);
-            audio.pause();
-            audio.currentTime = 0;
-            audio.volume = volume;
-            audio.play().catch(err => console.warn("Audio blocked:", err));
-        }
-
-        function startMusic() {
-            const audio = document.getElementById("music");
-            if (audio.paused) {
-                audio.currentTime = 0;
-                audio.volume = 0.05;
-                audio.play().catch(err => console.warn("Audio blocked:", err));
-            }
-        }
-
-        async function fetchData(url, options = {}) {
-            try {
-                const res = await fetch(url, options);
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                }
-                return await res.json();
-            } catch (error) {
-                console.error("Fetch error:", error);
-                return null;
-            }
-        }
-
-        async function loadWorld() {
-            const data = await fetchData('/world');
-            if (!data) return;
-
-            const grid = data.grid;
-            const score = data.score;
-            const recentScore = data.recentScoreGained;
-
-            if (data.collected === true) {
-                playSound("collectSound");
-
-                const plusScore = document.getElementById("plus_score");
-                plusScore.style.display = "block";
-                plusScore.textContent = "+" + recentScore;
-
-                setTimeout(() => {
-                    plusScore.style.display = "none";
-                }, 1500);
-            }
-
-            previousScore = score;
-            document.getElementById("score").textContent = score;
-
-            renderGrid(grid);
-
-            if (!data.gameActive) {
-                endGame();
-            }
-
-        }
-
-        async function move(dir) {
-            await fetchData('/move', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'dir=' + dir
-            });
-        }
-
-        document.addEventListener('keydown', startMusic);
-        document.addEventListener('click', startMusic);
-
-        document.addEventListener('keydown', (e) => {
-            if (['w', 'a', 's', 'd'].includes(e.key)) {
-                move(e.key.toUpperCase());
-            }
-        });
-
-        setInterval(loadWorld, 100);
-        let restartButton = document.getElementById("restart-button");
-        let playAgainButton = document.getElementById("play-again-button");
-
-        // Listener per il pulsante "Restart"
-        restartButton.addEventListener("click", async () => {
-            try {
-                const response = await fetch('/restart', {
-                    method: 'POST'
-                });
-
-                if (response.ok) {
-                    alert("Game restarted!");
-                    window.location.reload();
-                } else {
-                    console.error("Failed to restart the game");
-                    alert("Error restarting the game!");
-                }
-            } catch (error) {
-                console.error("Error in restart request:", error);
-            }
-        });
-
-        // Listener per il pulsante "Play Again"
-        playAgainButton.addEventListener("click", async () => {
-            document.getElementById("game-over-overlay").style.display = "none";
-            try {
-                const response = await fetch('/restart', {
-                    method: 'POST'
-                });
-                if (response.ok) {
-                    alert("Game restarted!");
-                    window.location.reload();
-                } else {
-                    console.error("Failed to restart the game");
-                    alert("Error restarting the game!");
-                }
-            } catch (error) {
-                console.error("Error in play again request:", error);
-            }
-        });
-</script>
+    <script src="logic.js"></script>
 </body>
 </html>

@@ -91,17 +91,25 @@ public class ServerManager {
         });
 
         post("/restart", (req, res) -> {
-            // Riavvia lo stato del gioco
+            logger.info("Richiesta di riavvio del gioco ricevuta.");
+
+            // Ripristina lo stato del gioco
             gameWorld.resetGame();
             player.setPosition(2, 5); // Reimposta la posizione del giocatore
             gameActive.set(true); // Riattiva il gioco
 
-            // Avvia nuovamente il timer
-            new Thread(() -> GameUtils.startGameTimer(gameWorld, player, gameActive, gameWorld.getTimeRemaining())).start();
+            // Avvia nuovamente il motore fisico
+            Thread physicsThread = new Thread(new GamePhysics(gameWorld, player));
+            physicsThread.start();
+            logger.info("Motore fisico riavviato.");
 
-            logger.info("Gioco riavviato.");
+            // Avvia il timer del gioco
+            new Thread(() -> GameUtils.startGameTimer(gameWorld, player, gameActive, gameWorld.getTimeRemaining())).start();
+            logger.info("Timer del gioco riavviato.");
+
             res.type("application/json");
             return "{\"message\": \"Game restarted\", \"gameActive\": true}";
         });
+
     }
 }

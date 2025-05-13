@@ -15,98 +15,122 @@ import util.LoggerUtil;
 
 public class Main {
     private static final Logger logger = LoggerUtil.getLogger(Main.class);
+    
+    // Costanti di configurazione
     private static final int GAME_DURATION_IN_SECONDS = 60; // 1 minuto
-    private static AtomicBoolean gameActive = new AtomicBoolean(true); // Stato del gioco (attivo o terminato)
+    private static final int DEFAULT_PLAYER_X = 2;
+    private static final int DEFAULT_PLAYER_Y = 5;
+
+    // Stato globale del gioco
+    private static final AtomicBoolean gameActive = new AtomicBoolean(true);
     private static int timerDuration;
+    private static GamePhysics gamePhysics; // Riferimento a GamePhysics
 
     public static void main(String[] args) {
-        logger.info("Inizializzazione del server...");
+        logger.info("Inizializzazione del server e della logica di gioco...");
 
+        // Inizializziamo il mondo e il giocatore
         GameWorld gameWorld = new GameWorld();
-        Player player = new Player(2, 5);
+        Player player = new Player(DEFAULT_PLAYER_X, DEFAULT_PLAYER_Y);
 
-        // Carica lo stato del gioco se esiste
-        try {
-            GameState gameState = GameStateManager.loadGameState();
-            if (gameState != null) {
-                logger.info("Stato del gioco trovato. Caricamento del gioco...");
-                gameWorld.loadGame(player); // Carica lo stato del gioco
-                timerDuration = gameState.timeRemaining; // Tempo rimanente dal salvataggio
-            } else {
-                logger.info("Nessun stato del gioco trovato. Inizializzazione di una nuova partita...");
-                timerDuration = GAME_DURATION_IN_SECONDS; // Tempo predefinito
-                createInitialGameState(); // Inizializza stato di gioco
-            }
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Errore durante il caricamento dello stato del gioco: {0}", e.getMessage());
-            gracefulExit();
-        }
+        // Carichiamo lo stato del gioco esistente o creiamo uno stato iniziale
+        initializeGameState(gameWorld, player);
 
-        GameState gameState = GameStateManager.loadGameState();
+        // Eseguiamo i componenti principali del gioco
+        startGameThreads(gameWorld, player);
+
+        // Configuriamo il server e iniziamo a rispondere alle richieste
+        startServer(gameWorld, player);
+
+        // Impostiamo il salvataggio dello stato su shutdown del programma
+        setupShutdownHook(gameWorld, player);
+    }
+
+    /**
+     * Carica lo stato del gioco o crea uno stato iniziale.
+     */
+    private static void initializeGameState(GameWorld gameWorld, Player player) {
+        GameState gameState = GameStateManager.loadGameStateWithFallback();
+
         if (gameState != null) {
-            // Recupera tempo rimanente dal file di salvataggio
-            timerDuration = gameState.timeRemaining;
-            logger.info("Tempo rimanente caricato dal salvataggio: " + timerDuration + " secondi");
+            logger.info("Stato del gioco trovato. Caricamento in corso...");
+            gameWorld.loadGame(player); // Carichiamo i dati del mondo
+            timerDuration = gameState.timeRemaining; // Tempo rimanente
         } else {
-            // Tempo di default (3 minuti) se non c'è un salvataggio
-            timerDuration = GAME_DURATION_IN_SECONDS;
+            logger.info("Nessun stato salvato trovato. Creazione di uno stato iniziale...");
+            timerDuration = GAME_DURATION_IN_SECONDS; // Imposta il tempo di default
+            createInitialGameState(gameWorld); // Passa il GameWorld
         }
+    }
 
-        // Avvia il motore di fisica
-        GamePhysics gamePhysics = new GamePhysics(gameWorld, player);
+    /**
+     * Crea e salva uno stato iniziale del gioco.
+     */
+    private static void createInitialGameState(GameWorld gameWorld) {
+        gameWorld.resetGame(); // Resetta il mondo e crea il terreno e un oggetto iniziale
+        GameStateManager.saveGameStateDual( // Salva il nuovo stato iniziale
+            DEFAULT_PLAYER_X, 
+            DEFAULT_PLAYER_Y, 
+            0, 
+            gameWorld.getItems(), // Ottiene gli item generati dal GameWorld
+            GAME_DURATION_IN_SECONDS 
+        );
+        logger.info("Stato iniziale creato e salvato con successo tramite GameWorld.");
+    }
+
+    /**
+     * Avvia i thread principali del gioco come fisica e timer.
+     */
+    private static void startGameThreads(GameWorld gameWorld, Player player) {
+        // Motore di fisica del gioco
+        gamePhysics = new GamePhysics(gameWorld, player);
         Thread physicsThread = new Thread(gamePhysics);
         physicsThread.start();
 
-        // Avvia il timer di 3 minuti
-        Thread timerThread = new Thread(() -> GameUtils.startGameTimer(gameWorld, player, gameActive, GAME_DURATION_IN_SECONDS));
+        // Timer del gioco
+        Thread timerThread = new Thread(() -> {
+            GameUtils.startGameTimer(gameWorld, player, gameActive, timerDuration);
+        });
         timerThread.start();
+    }
 
-        gameWorld.movePlayer(player, "W", gamePhysics); // Esempio di chiamata di movimento
-
-        // Avvia il gioco
+    /**
+     * Configura e avvia il server per la gestione client-server.
+     */
+    private static void startServer(GameWorld gameWorld, Player player) {
         ServerManager serverManager = new ServerManager(gameWorld, player, gameActive, timerDuration);
         serverManager.startServer();
+        logger.info("Server avviato correttamente e pronto a gestire le richieste.");
+    }
 
-        // Salva lo stato del gioco alla chiusura
+    /**
+     * Configura un hook per salvare automaticamente lo stato del gioco
+     * alla chiusura del programma.
+     */
+    private static void setupShutdownHook(GameWorld gameWorld, Player player) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            gameWorld.setGameActive(false); // Ferma ogni logica dipendente dallo stato del gioco
             saveGameState(gameWorld, player);
             gamePhysics.stop(); // Ferma il thread della fisica
+            logger.info("Il gioco è stato terminato correttamente.");
         }));
     }
 
-    private static void createInitialGameState() {
-        List<Item> initialItems = List.of(
-            new Item(5, 5, "🍎", 10),
-            new Item(10, 3, "🍌", 15)
-        );
-        GameStateManager.saveGameState(2, 5, 0, initialItems, GAME_DURATION_IN_SECONDS);
-        logger.info("File game_state.dat creato con uno stato iniziale.");
-        logger.info("Percorso file di salvataggio: " + System.getProperty("user.dir") + "/game_state.dat");
-    }
-
+    /**
+     * Salva lo stato corrente del gioco.
+     */
     private static void saveGameState(GameWorld gameWorld, Player player) {
         try {
-            gameWorld.saveGame(player);
-            logger.info("Stato del gioco salvato con successo.");
+            GameStateManager.saveGameStateDual(
+                player.getX(),
+                player.getY(),
+                gameWorld.getScore(),
+                gameWorld.getItems(),
+                gameWorld.getTimeRemaining()
+            );
+            logger.info("Stato del gioco salvato correttamente.");
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Errore durante il salvataggio dello stato del gioco: {0}", e.getMessage());
         }
-    }
-
-    private static void startGameTimer(GameWorld gameWorld, Player player) {
-        try {
-            logger.info("Timer del gioco avviato.");
-            Thread.sleep(GAME_DURATION_IN_SECONDS * 1000); // Aspetta 3 minuti
-            gameActive.set(false); // Imposta il gioco come terminato
-            logger.info("Tempo scaduto. Termina il gioco.");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.log(Level.SEVERE, "Errore nel timer del gioco: {0}", e.getMessage());
-        }
-    }
-
-    private static void gracefulExit() {
-        logger.severe("Terminazione del programma a causa di un errore critico.");
-        System.exit(1);
     }
 }

@@ -3,6 +3,7 @@ package game;
 import java.util.logging.Logger;
 
 import util.LoggerUtil;
+import util.GameSettings;
 
 public class GamePhysics implements Runnable {
     private static final Logger logger = LoggerUtil.getLogger(GamePhysics.class);
@@ -12,6 +13,7 @@ public class GamePhysics implements Runnable {
     private long lastGroundTime = 0;
     private static final long GROUND_THRESHOLD = 1000; // Millisecondi
     private volatile boolean manualMovement = false; // Meccanismo di blocco per movimento manuale
+    private static final long PHYSICS_INTERVAL = GameSettings.getInstance().getPhysicsStrength(); // Forza fisica
 
     public GamePhysics(GameWorld gameWorld, Player player) {
         this.gameWorld = gameWorld;
@@ -23,7 +25,7 @@ public class GamePhysics implements Runnable {
         System.out.println("Thread della fisica avviato.");
         while (running) {
             try {
-                Thread.sleep(400); // Ritardo tra ogni applicazione della gravità
+                Thread.sleep(PHYSICS_INTERVAL); // Usa l'intervallo configurato
                 applyGravity();
                 gameWorld.updateItems(); // Aggiorna gli oggetti scaduti
             } catch (InterruptedException e) {

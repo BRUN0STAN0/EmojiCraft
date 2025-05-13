@@ -1,22 +1,22 @@
 package util;
 
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
+import java.io.IOException;
+import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 public class LoggerUtil {
     public static Logger getLogger(Class<?> clazz) {
         Logger logger = Logger.getLogger(clazz.getName());
-        logger.setUseParentHandlers(false); // Disabilita i log duplicati
+        logger.setUseParentHandlers(false);
 
-        ConsoleHandler handler = new ConsoleHandler();
-        handler.setLevel(Level.ALL);
-        handler.setFormatter(new SimpleFormatter());
-
-        logger.addHandler(handler);
-        logger.setLevel(Level.ALL);
-
+        try {
+            FileHandler fileHandler = new FileHandler("game_logs.log", true); // Scrive su file
+            fileHandler.setFormatter(new SimpleFormatter());
+            logger.addHandler(fileHandler);
+        } catch (IOException e) {
+            System.err.println("Errore nel logger: " + e.getMessage());
+        }
         return logger;
     }
 }

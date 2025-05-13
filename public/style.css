@@ -1,0 +1,118 @@
+/* General Styles */
+body {
+    margin: 0;
+    font-family: 'Segoe UI Emoji', Arial, sans-serif;
+    background: #c2fbff;
+}
+
+h1, h2, p {
+    text-align: center;
+}
+
+.hidden {
+    display: none!important;
+}
+
+/* HUD Styles */
+#hud {
+    position: absolute;
+    z-index: 100;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    justify-content: space-between;
+    width: calc(100% - 20px);
+    color: black;
+}
+
+#score {
+    background: white;
+    color: red;
+    border: 3px dotted black;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 20px;
+}
+
+#timer {
+    background: white;
+    border: 3px solid red;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 20px;
+}
+
+/* Grid and Cells */
+#grid-container {
+    position: fixed;
+    z-index: 1000;
+    bottom: 50px;
+    left:0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    margin-top: 100px;
+
+}
+
+#grid {
+background: radial-gradient(circle, #fcfcf7 19%, #fffbe3 34%, #c2fbff 46%);
+}
+
+#grid table {
+    border-collapse: collapse;
+
+}
+
+#grid td {
+    width: 70px;
+    height: 70px;
+    text-align: center;
+    font-size: 50px;
+}
+
+#grid tr:nth-last-child(-n+2) td {
+    background-color: gray;
+}
+
+/* Game Over Overlay */
+#game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    z-index: 1000;
+}
+
+#play-again-button {
+    padding: 15px 30px;
+    font-size: large;
+    border-radius: 10px;
+    background-color: #77c697;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+#restart-button {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px 30px;
+    font-size: large;
+    border-radius: 10px;
+    background-color: #77c697;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-top: 143px solid gray;
+}

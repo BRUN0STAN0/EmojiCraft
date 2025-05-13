@@ -13,6 +13,7 @@ import map.MapComponent;
 import model.Item;
 import model.Wall;
 import response.MoveResponse;
+import util.GameSettings;
 
 public class GameWorld {
     private static final int WIDTH = 24;
@@ -23,14 +24,25 @@ public class GameWorld {
     private int recentScoreGained = 0;
     private boolean itemCollected = false;
     private final Map<Item, Long> itemTimers = new ConcurrentHashMap<>(); // Mappa per tracciare il tempo di vita degli oggetti
-    private static final long ITEM_LIFETIME = 4000; // Tempo di vita degli oggetti in millisecondi
+    private static util.GameSettings GameSettings;
+    private static final long ITEM_LIFETIME = GameSettings.getInstance().getSpawnItemInterval(); // Intervallo spawn item
+
     private int timeRemaining;
     // Contatore per tracciare lo spawn degli oggetti
     private int itemSpawnCounter = 0;
+    private boolean gameActive = true; // Lo stato di attivazione del gioco
 
     public GameWorld() {
         createGround();
         spawnNewItem();
+    }
+
+    public synchronized boolean isGameActive() {
+        return gameActive;
+    }
+
+    public synchronized void setGameActive(boolean isActive) {
+        this.gameActive = isActive;
     }
 
     public synchronized int getTimeRemaining() {
@@ -176,6 +188,10 @@ public class GameWorld {
     }
 
     public synchronized void updateItems() {
+        if (!gameActive) {
+            return; // Se il gioco non è attivo, interrompe l'aggiornamento
+        }
+
         long currentTime = System.currentTimeMillis();
         Iterator<Map.Entry<Item, Long>> iterator = itemTimers.entrySet().iterator();
 
@@ -190,13 +206,19 @@ public class GameWorld {
                 iterator.remove(); // Rimuovi l'oggetto dalla mappa dei timer
                 System.out.println("Oggetto scaduto rimosso: " + item.getSymbol());
 
-                // Genera un nuovo oggetto
-                spawnNewItem();
+                // Genera un nuovo oggetto solo se il gioco è attivo
+                if (gameActive) {
+                    spawnNewItem();
+                }
             }
         }
     }
 
     public synchronized void spawnNewItem() {
+        if (!gameActive) {
+            return; // Se il gioco non è attivo, non crea nuovi oggetti
+        }
+
         Random random = new Random();
         int x, y;
 
@@ -237,7 +259,7 @@ public class GameWorld {
     }
 
     public void saveGame(Player player) {
-        GameStateManager.saveGameState(player.getX(), player.getY(), score, 
+        GameStateManager.saveGameStateDual(player.getX(), player.getY(), score,
             items.getComponents().stream()
                 .filter(component -> component instanceof Item)
                 .map(component -> (Item) component)
@@ -251,9 +273,20 @@ public class GameWorld {
         if (gameState != null) {
             player.move(gameState.getPlayerX() - player.getX(), gameState.getPlayerY() - player.getY(), "🧍");
             score = gameState.getScore();
+
+            // Pulisci gli oggetti esistenti
             items.getComponents().clear();
-            items.getComponents().addAll(gameState.getItems());
+
+            // Aggiungi gli oggetti salvati, verificando che non siano null
+            if (gameState.getItems() != null) {
+                items.getComponents().addAll(gameState.getItems());
+            } else {
+                System.err.println("Attenzione: nessun item trovato nel salvataggio del gioco!");
+            }
+
             System.out.println("Stato del gioco caricato con successo.");
+        } else {
+            System.err.println("Errore: impossibile caricare lo stato del gioco!");
         }
     }
 

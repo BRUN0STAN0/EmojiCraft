@@ -11,30 +11,21 @@ import java.util.logging.Logger;
 public class GameUtils {
     private static final Logger logger = LoggerUtil.getLogger(GameUtils.class);
 
-    public static void startGameTimer(GameWorld gameWorld, Player player, AtomicBoolean gameActive, int initialDuration) {
-    int timeRemaining = initialDuration;
-
-    try {
-        logger.info("Timer del gioco avviato.");
-        while (timeRemaining > 0 && gameActive.get()) {
-            Thread.sleep(1000); // Aspetta un secondo
-            timeRemaining--; // Decrementa il tempo in secondi
-
-            gameWorld.setTimeRemaining(timeRemaining); // Aggiorna il tempo rimanente
-            logger.info("Tempo rimanente: " + timeRemaining + " secondi");
+    public static void startGameTimer(GameWorld gameWorld, Player player, AtomicBoolean gameActive, int durationInSeconds) {
+    int duration = durationInSeconds > 0 ? durationInSeconds : GameSettings.getInstance().getGameDurationInSeconds(); // Tempo dal JSON
+    new Thread(() -> {
+        try {
+            for (int i = duration; i > 0; i--) {
+                Thread.sleep(1000); // 1 secondo
+                gameWorld.setTimeRemaining(i);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("Timer interrotto: " + e.getMessage());
+        } finally {
+            gameActive.set(false); // Termina il gioco
+            System.out.println("Tempo scaduto. Termina il gioco.");
         }
-
-        // Quando il timer scade
-        if (gameActive.get()) {
-            gameActive.set(false); // Cambia stato del gioco
-            logger.info("Il gioco è terminato. GameActive = " + gameActive.get());
-        }
-
-        gameWorld.setTimeRemaining(0);
-        logger.info("Tempo scaduto.");
-    } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        logger.log(Level.SEVERE, "Timer interrotto: {0}", e.getMessage());
-    }
+    }).start();
 }
 }
