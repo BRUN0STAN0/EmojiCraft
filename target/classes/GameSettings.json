@@ -1,0 +1,6 @@
+{
+  "spawnItemInterval": 4000,    // Intervallo di spawn item in millisecondi
+  "gameDurationInSeconds": 60, // Durata del gioco in secondi
+  "physicsStrength": 400,       // Ritardo della fisica in millisecondi
+  "gameUpdateFPS": 60           // Update del gioco in numero di FPS
+}
