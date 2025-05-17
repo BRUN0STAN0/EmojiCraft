@@ -1,6 +1,6 @@
 let timerDuration = 180; // Durata del gioco in secondi
 let timerInterval;
-
+/*
 function startTimer() {
     const timerElement = document.getElementById("timer");
 
@@ -16,7 +16,7 @@ function startTimer() {
         }
     }, 1000);
 }
-
+*/
 function endGame() {
     document.getElementById("game-over-overlay").classList.remove("hidden");
     document.getElementById("final-score").textContent = `Your Score: ${document.getElementById("score").textContent}`;
@@ -108,6 +108,8 @@ function restartGame() {
                 startTimer(); // Riavvia il timer sul client
 
                 loadWorld(); // Ricarica il mondo per sincronizzare la griglia e il gameplay
+                location.reload();
+
             }
         })
         .catch(error => console.error("Errore nel riavvio del gioco:", error));

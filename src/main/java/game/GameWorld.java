@@ -25,12 +25,16 @@ public class GameWorld {
     private boolean itemCollected = false;
     private final Map<Item, Long> itemTimers = new ConcurrentHashMap<>(); // Mappa per tracciare il tempo di vita degli oggetti
     private static util.GameSettings GameSettings;
-    private static final long ITEM_LIFETIME = GameSettings.getInstance().getSpawnItemInterval(); // Intervallo spawn item
+    private static final util.GameSettings gameSettings = util.GameSettings.getInstance();
+    private static final long ITEM_LIFETIME = gameSettings.getSpawnItemInterval(); // Intervallo spawn item
 
     private int timeRemaining;
     // Contatore per tracciare lo spawn degli oggetti
     private int itemSpawnCounter = 0;
     private boolean gameActive = true; // Lo stato di attivazione del gioco
+    private boolean spawnNegativeNext = false;
+    private static final int PLAYER_START_X = 5;
+    private static final int PLAYER_START_Y = 3;
 
     public GameWorld() {
         createGround();
@@ -215,31 +219,25 @@ public class GameWorld {
     }
 
     public synchronized void spawnNewItem() {
-        if (!gameActive) {
-            return; // Se il gioco non è attivo, non crea nuovi oggetti
-        }
+        if (!gameActive) return;
 
         Random random = new Random();
         int x, y;
 
-        // Trova una posizione vuota nella griglia
         do {
             x = random.nextInt(WIDTH);
-            y = random.nextInt(HEIGHT - 2); // Evita di generare oggetti sul terreno
+            y = random.nextInt(HEIGHT - 2);
         } while (!isCellEmpty(x, y));
 
-        // Logica di generazione dell'oggetto
-        Item newItem;
-        if (itemSpawnCounter == 2) { // Dopo 2 spawn positivi (al terzo), crea un oggetto negativo
-            newItem = NegativeItemFactory.createRandomNegativeItem(x, y);
-            itemSpawnCounter = 0; // Reset del contatore
-        } else {
-            newItem = ItemFactory.createRandomItem(x, y); // Genera un oggetto positivo
-            itemSpawnCounter++; // Incrementa il contatore
-        }
+        // Alternare tra oggetto positivo e negativo
+        Item newItem = spawnNegativeNext
+            ? NegativeItemFactory.createRandomNegativeItem(x, y)
+            : ItemFactory.createRandomItem(x, y);
+
+        spawnNegativeNext = !spawnNegativeNext;
 
         items.add(newItem);
-        itemTimers.put(newItem, System.currentTimeMillis()); // Registra il tempo di creazione dell'oggetto
+        itemTimers.put(newItem, System.currentTimeMillis());
         System.out.println("Oggetto registrato: " + newItem.getSymbol() + " in posizione X=" + x + ", Y=" + y);
     }
 
@@ -259,36 +257,64 @@ public class GameWorld {
     }
 
     public void saveGame(Player player) {
-        GameStateManager.saveGameStateDual(player.getX(), player.getY(), score,
-            items.getComponents().stream()
-                .filter(component -> component instanceof Item)
-                .map(component -> (Item) component)
-                .toList(),
-        timeRemaining // Usa il campo timeRemaining
-    );
+    try {
+        // Salva lo stato del gioco con i dati aggiornati
+        GameStateManager.saveGameStateDual(
+            player.getX(),
+            player.getY(),
+            score,
+            getWorldState(player), // Usa la griglia corrente del mondo
+            timeRemaining
+        );
+        System.out.println("Stato del gioco salvato correttamente.");
+    } catch (Exception e) {
+        System.err.println("Errore durante il salvataggio dello stato del gioco: " + e.getMessage());
+    }
 }
 
-    public void loadGame(Player player) {
+public void loadGame(Player player) {
+    try {
         GameState gameState = GameStateManager.loadGameState();
         if (gameState != null) {
+            // Ripristina la posizione del giocatore
             player.move(gameState.getPlayerX() - player.getX(), gameState.getPlayerY() - player.getY(), "🧍");
+
+            // Ripristina il punteggio
             score = gameState.getScore();
 
-            // Pulisci gli oggetti esistenti
+            // Ripristina il tempo rimanente
+            timeRemaining = gameState.getTimeRemaining();
+
+            // Ripulisci gli oggetti esistenti e ricarica lo stato della griglia
             items.getComponents().clear();
 
-            // Aggiungi gli oggetti salvati, verificando che non siano null
-            if (gameState.getItems() != null) {
-                items.getComponents().addAll(gameState.getItems());
+            String[][] loadedGrid = gameState.getGrid(); // Ottiene la griglia salvata
+
+            if (loadedGrid != null) {
+                for (int y = 0; y < loadedGrid.length; y++) {
+                    for (int x = 0; x < loadedGrid[0].length; x++) {
+                        String symbol = loadedGrid[y][x];
+                        if (symbol != null && !symbol.equals(" ")) {
+                            // Ricrea gli oggetti del mondo inew Wall("")n base ai simboli
+                            MapComponent mapComponent = new Wall(x,y);
+                            if (mapComponent != null) {
+                                items.add(mapComponent);
+                            }
+                        }
+                    }
+                }
             } else {
-                System.err.println("Attenzione: nessun item trovato nel salvataggio del gioco!");
+                System.err.println("Attenzione: non è stata trovata alcuna griglia salvata!");
             }
 
             System.out.println("Stato del gioco caricato con successo.");
         } else {
             System.err.println("Errore: impossibile caricare lo stato del gioco!");
         }
+    } catch (Exception e) {
+        System.err.println("Errore durante il caricamento dello stato del gioco: " + e.getMessage());
     }
+}
 
     public void registerShutdownHook(Player player) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -325,6 +351,7 @@ public class GameWorld {
     // Log di debug
     System.out.println("Gioco completamente ripristinato. Oggetti, timer e punteggio resettati.");
 }
+
 
 
 }

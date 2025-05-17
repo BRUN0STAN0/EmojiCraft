@@ -81,6 +81,7 @@ public class ServerManager {
 
             // Reinizializza il giocatore
             player.setPosition(2, 5);
+            gameWorld.createGround();
             logger.info("Giocatore reinizializzato alle posizioni iniziali.");
 
             // Riavvia il timer utilizzando GameUtils

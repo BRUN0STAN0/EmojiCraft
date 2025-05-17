@@ -10,8 +10,7 @@ import com.google.gson.GsonBuilder;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-
-
+import java.io.ObjectInputStream;
 
 /**
  * Gestisce il salvataggio e caricamento dello stato del gioco.
@@ -21,32 +20,25 @@ public class GameStateManager {
     private static final String SAVE_FILE = System.getProperty("user.dir") + "/game_state.dat";
     private static final String SAVE_FILE_JSON = "game_state.json"; // File JSON
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    
 
-    /**
-     * Salva lo stato del gioco su file.
-     */
-    public static void saveGameStateDual(int playerX, int playerY, int score, List<Item> items, int timeRemaining) {
-        if (items == null) {
-            items = List.of(); // Usa una lista vuota se manca la lista degli oggetti
-        }
-        GameState gameState = new GameState(playerX, playerY, score, items, timeRemaining);
+public static void saveGameStateDual(int playerX, int playerY, int score, String[][] grid, int timeRemaining) {
+    try {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create(); // Oggetto Gson per JSON leggibile
 
-        // Serializza in binario
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(SAVE_FILE))) {
-            oos.writeObject(gameState);
-            System.out.println("Stato del gioco salvato correttamente in formato binario.");
-        } catch (IOException e) {
-            System.err.println("Errore durante il salvataggio nel file binario: " + e.getMessage());
-        }
+        // Crea un oggetto GameState con i dati da salvare
+        GameState gameState = new GameState(playerX, playerY, score, grid, timeRemaining);
 
-        // Serializza in JSON
-        try (FileWriter writer = new FileWriter(SAVE_FILE_JSON)) {
-            gson.toJson(gameState, writer);
-            System.out.println("Stato del gioco salvato correttamente in formato JSON.");
-        } catch (IOException e) {
-            System.err.println("Errore durante il salvataggio del file JSON: " + e.getMessage());
+        // Salva l'oggetto GameState direttamente nel file come JSON
+        try (FileWriter writer = new FileWriter("game_state.json")) {
+            gson.toJson(gameState, writer); // Converte l'oggetto in JSON e lo salva
+            System.out.println("Game state salvato correttamente in game_state.json!");
         }
+    } catch (IOException e) {
+        e.printStackTrace();
+        System.err.println("Errore durante il salvataggio dello stato di gioco.");
     }
+}
 
     public static void saveGameStateToJson(GameState gameState) {
         try (FileWriter writer = new FileWriter(SAVE_FILE_JSON)) {
@@ -57,14 +49,17 @@ public class GameStateManager {
         }
     }
 
-    public static GameState loadGameStateFromJson() {
-        try (FileReader reader = new FileReader(SAVE_FILE_JSON)) {
-            return gson.fromJson(reader, GameState.class); // Deserializza dal JSON
-        } catch (IOException e) {
-            System.err.println("Errore durante il caricamento dello stato dal JSON: " + e.getMessage());
-        }
-        return null;
+public static GameState loadGameStateFromJson() {
+    try (FileReader reader = new FileReader("game_state.json")) {
+        Gson gson = new Gson(); // Creazione di un oggetto Gson
+        GameState gameState = gson.fromJson(reader, GameState.class); // Converti il JSON in GameState
+        System.out.println("Game state caricato correttamente da game_state.json!");
+        return gameState; // Ritorna lo stato del gioco
+    } catch (IOException e) {
+        System.err.println("Errore durante il caricamento dello stato di gioco dal file JSON: " + e.getMessage());
     }
+    return null;
+}
 
 
     /**

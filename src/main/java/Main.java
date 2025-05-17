@@ -31,6 +31,7 @@ public class Main {
 
         // Inizializziamo il mondo e il giocatore
         GameWorld gameWorld = new GameWorld();
+
         Player player = new Player(DEFAULT_PLAYER_X, DEFAULT_PLAYER_Y);
 
         // Carichiamo lo stato del gioco esistente o creiamo uno stato iniziale
@@ -51,11 +52,10 @@ public class Main {
      */
     private static void initializeGameState(GameWorld gameWorld, Player player) {
         GameState gameState = GameStateManager.loadGameStateWithFallback();
-
         if (gameState != null) {
             logger.info("Stato del gioco trovato. Caricamento in corso...");
             gameWorld.loadGame(player); // Carichiamo i dati del mondo
-            timerDuration = gameState.timeRemaining; // Tempo rimanente
+            timerDuration = gameState.getTimeRemaining(); // Tempo rimanente
         } else {
             logger.info("Nessun stato salvato trovato. Creazione di uno stato iniziale...");
             timerDuration = GAME_DURATION_IN_SECONDS; // Imposta il tempo di default
@@ -72,7 +72,7 @@ public class Main {
             DEFAULT_PLAYER_X, 
             DEFAULT_PLAYER_Y, 
             0, 
-            gameWorld.getItems(), // Ottiene gli item generati dal GameWorld
+            gameWorld.getWorldState(new Player(5,3)), // Ottiene gli item generati dal GameWorld
             GAME_DURATION_IN_SECONDS 
         );
         logger.info("Stato iniziale creato e salvato con successo tramite GameWorld.");
@@ -125,7 +125,7 @@ public class Main {
                 player.getX(),
                 player.getY(),
                 gameWorld.getScore(),
-                gameWorld.getItems(),
+                gameWorld.getWorldState(player),
                 gameWorld.getTimeRemaining()
             );
             logger.info("Stato del gioco salvato correttamente.");

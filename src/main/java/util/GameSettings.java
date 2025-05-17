@@ -36,7 +36,7 @@ public class GameSettings {
             GameSettings defaultSettings = new GameSettings();
             defaultSettings.spawnItemInterval = 4000;
             defaultSettings.gameDurationInSeconds = 180;
-            defaultSettings.physicsStrength = 400;
+            defaultSettings.physicsStrength = 200;
             defaultSettings.gameUpdateFPS = 60;
             return defaultSettings;
         }
