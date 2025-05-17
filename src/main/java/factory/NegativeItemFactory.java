@@ -5,8 +5,8 @@ import java.util.Random;
 import model.Item;
 
 public class NegativeItemFactory {
-    private static final String[] EMOJIS = {"😞", "🤕", "😵‍💫", "🥵", "☠️"}; // Emoji negative
-    private static final int[] SCORES = {-10, -15, -20, -25, -50}; // Punteggi negativi
+    private static final String[] EMOJIS = {"💩", "👺", "👽", "👻", "☠️"}; // Emoji negative
+    private static final int[] SCORES = {-5, -15, -20, -25, -50}; // Punteggi negativi
     private static final Random random = new Random();
 
     // Metodo per creare un oggetto negativo in una posizione specifica

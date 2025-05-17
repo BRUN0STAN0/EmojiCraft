@@ -108,11 +108,12 @@ function restartGame() {
                 startTimer(); // Riavvia il timer sul client
 
                 loadWorld(); // Ricarica il mondo per sincronizzare la griglia e il gameplay
-                location.reload();
+
 
             }
         })
         .catch(error => console.error("Errore nel riavvio del gioco:", error));
+        location.reload();
 }
 async function loadWorld() {
     const response = await fetch('/world');
