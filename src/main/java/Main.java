@@ -14,7 +14,7 @@ import util.GameUtils;
 import util.LoggerUtil;
 
 public class Main {
-    private static final Logger logger = LoggerUtil.getLogger(Main.class);
+    private static final Logger logger = LoggerUtil.getInstance().getGlobalLogger();
     
     // Costanti di configurazione
     private static final int GAME_DURATION_IN_SECONDS = 60; // 1 minuto

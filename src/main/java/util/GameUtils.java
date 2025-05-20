@@ -9,7 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class GameUtils {
-    private static final Logger logger = LoggerUtil.getLogger(GameUtils.class);
+    private static final Logger logger = LoggerUtil.getInstance().getGlobalLogger();
 
     public static void startGameTimer(GameWorld gameWorld, Player player, AtomicBoolean gameActive, int durationInSeconds) {
     int duration = durationInSeconds > 0 ? durationInSeconds : GameSettings.getInstance().getGameDurationInSeconds(); // Tempo dal JSON

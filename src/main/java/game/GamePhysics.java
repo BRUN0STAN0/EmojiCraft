@@ -6,7 +6,7 @@ import util.LoggerUtil;
 import util.GameSettings;
 
 public class GamePhysics implements Runnable {
-    private static final Logger logger = LoggerUtil.getLogger(GamePhysics.class);
+    private static final Logger logger = LoggerUtil.getInstance().getGlobalLogger();
     private final GameWorld gameWorld;
     private final Player player;
     private boolean running = true;

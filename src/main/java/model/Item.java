@@ -12,7 +12,7 @@ public class Item implements MapComponent, Serializable { // Aggiunto Serializab
     private int y;
     private String emoji;
     private boolean visible;
-    private int score; // ✅ Nuovo campo
+    private int score; // Nuovo campo
 
     public Item(int x, int y, String emoji, int score) {
         this.x = x;

@@ -16,7 +16,7 @@ import java.io.ObjectInputStream;
  * Gestisce il salvataggio e caricamento dello stato del gioco.
  */
 public class GameStateManager {
-    private static final Logger logger = LoggerUtil.getLogger(GameState.class);
+    private static final Logger logger = LoggerUtil.getInstance().getGlobalLogger();
     private static final String SAVE_FILE = System.getProperty("user.dir") + "/game_state.dat";
     private static final String SAVE_FILE_JSON = "game_state.json"; // File JSON
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();

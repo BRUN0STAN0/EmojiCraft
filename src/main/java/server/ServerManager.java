@@ -20,7 +20,7 @@ import static spark.Spark.post;
 import static spark.Spark.staticFiles;
 
 public class ServerManager {
-    private static final Logger logger = LoggerUtil.getLogger(ServerManager.class);
+    private static final Logger logger = LoggerUtil.getInstance().getGlobalLogger();
     private final GameWorld gameWorld;
     private final Player player;
     private final AtomicBoolean gameActive; // Stato del gioco
