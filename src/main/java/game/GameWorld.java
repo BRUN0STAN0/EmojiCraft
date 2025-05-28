@@ -1,9 +1,6 @@
 package game;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import factory.ItemFactory;
@@ -19,7 +16,7 @@ public class GameWorld {
     private static final int WIDTH = 24;
     private static final int HEIGHT = 10;
     private final ItemGroup items = new ItemGroup();
-    private List<Item> itemList;
+    private List<Item> itemList = new ArrayList<>();
     private int score = 0;
     private int recentScoreGained = 0;
     private boolean itemCollected = false;
@@ -118,18 +115,24 @@ public class GameWorld {
     }
 
     public synchronized boolean checkItemCollision(Player player) {
+        System.out.println("Controllo collisione per il giocatore in X=" + player.getX() + ", Y=" + player.getY());
+        System.out.println("Oggetti presenti nel mondo:");
+        items.getComponents().forEach(item -> {
+            System.out.println("- Oggetto: " + item.getSymbol() + ", X=" + item.getX() + ", Y=" + item.getY());
+        });
+
         boolean collected = items.getComponents().removeIf(component -> {
             if (component instanceof Item item && item.getX() == player.getX() && item.getY() == player.getY()) {
                 recentScoreGained = item.getScore();
                 score += recentScoreGained;
-                System.out.println("Oggetto raccolto: " + item.getSymbol() + " in posizione X=" + item.getX() + ", Y=" + item.getY());
+                System.out.println("Oggetto raccolto: " + item.getSymbol());
                 return true;
             }
             return false;
         });
 
         if (collected) {
-            spawnNewItem(); // Genera un nuovo oggetto
+            spawnNewItem();
         }
 
         return collected;
@@ -352,6 +355,8 @@ public void loadGame(Player player) {
     System.out.println("Gioco completamente ripristinato. Oggetti, timer e punteggio resettati.");
 }
 
-
-
+    // Getter per ottenere il gruppo di oggetti
+    public ItemGroup getItemsGroup() {
+        return this.items;
+    }
 }
